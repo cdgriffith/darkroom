@@ -1,11 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
-from pynput import keyboard
+from threading import Thread
 
+
+from pynput import keyboard
 from luma.core.interface.serial import spi, noop
 from luma.core.render import canvas
 from luma.led_matrix.device import max7219
 from luma.core.legacy.font import proportional, LCD_FONT
+import simpleaudio as sa
 
 from darkroom.enlarger import Enlarger
 
@@ -78,6 +81,13 @@ def set_timer_mode_toggle():
         pass
         # start blinking
     set_timer_mode = not set_timer_mode
+
+
+def audio(file):
+    wave_obj = sa.WaveObject.from_wave_file(file)
+    audio_thread = Thread(target=wave_obj.play)
+    audio_thread.setDaemon(True)
+    audio_thread.start()
 
 
 def on_release(key):
