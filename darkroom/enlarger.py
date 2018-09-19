@@ -53,8 +53,8 @@ class Enlarger(OutputDevice):
             if not self.printing:
                 self.draw(initial)
                 return
-            time.sleep(.2)
-            length -= .2
+            time.sleep(.1)
+            length -= .1
         self.draw(initial)
 
     def _print_off(self, length):

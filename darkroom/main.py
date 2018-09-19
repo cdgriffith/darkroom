@@ -1,12 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
-import getpass
-if getpass.getuser() != 'pi':
-    import sys
-    sys.exit(1)
-
 import os
 import time
+from threading import Thread
+
 from pynput import keyboard
 from luma.core.interface.serial import spi, noop
 from luma.core.render import canvas
@@ -17,12 +14,13 @@ from darkroom.enlarger import Enlarger
 from PIL import ImageFont
 
 font_path = os.path.abspath(
-os.path.join(os.path.dirname(__file__), 'fonts', 'scoreboard.ttf'))
+    os.path.join(os.path.dirname(__file__),
+                 'fonts',
+                 'scoreboard.ttf'))
 font = ImageFont.truetype(font_path, 10)
 
 serial = spi(port=0, device=0, gpio=noop())
-device = max7219(serial, cascaded=4, block_orientation=-90)  # may be 90 or -90
-
+device = max7219(serial, cascaded=4, block_orientation=-90)
 
 timer = 0.0
 set_timer_mode = False
@@ -38,7 +36,9 @@ def display(text):
 
 
 def display_time(number):
-    display("{:.1f}".format(number).zfill(4))
+    d = Thread(target=display, args=("{:.1f}".format(number).zfill(4),))
+    d.setDaemon(True)
+    d.start()
 
 
 def print_light():
