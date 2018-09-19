@@ -2,7 +2,6 @@
 # -*- coding: UTF-8 -*-
 import os
 import time
-from threading import Thread
 
 from pynput import keyboard
 from luma.core.interface.serial import spi, noop
@@ -36,9 +35,7 @@ def display(text):
 
 
 def display_time(number):
-    d = Thread(target=display, args=("{:.1f}".format(number).zfill(4),))
-    d.setDaemon(True)
-    d.start()
+    display("{:.1f}".format(number).zfill(4),)
 
 
 def print_light():
@@ -144,8 +141,9 @@ def on_release(key):
             except AttributeError:
                 pass
             else:
-                if str(key.char).startswith('5'):
+                if str(key.char).startswith('5') or key.char is None:
                     set_timer_capture += '5'
+                    display(set_timer_capture + "*")
                     return
     elif stringed in actions:
         return actions[stringed]()
