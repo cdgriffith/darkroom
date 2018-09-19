@@ -1,24 +1,27 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
-from threading import Thread
+import getpass
+if getpass.getuser() != 'pi':
+    import sys
+    sys.exit(1)
 
-
+import os
+import time
 from pynput import keyboard
 from luma.core.interface.serial import spi, noop
 from luma.core.render import canvas
 from luma.led_matrix.device import max7219
-from luma.core.legacy.font import proportional, LCD_FONT
-import simpleaudio as sa
 
 from darkroom.enlarger import Enlarger
 
-# from PIL import ImageFont
-# font_path = os.path.abspath(
-# os.path.join(os.path.dirname(__file__), 'fonts', 'lato' 'Lato-Regular.ttf'))
-# font = ImageFont.truetype(font_path, 12)
+from PIL import ImageFont
+
+font_path = os.path.abspath(
+os.path.join(os.path.dirname(__file__), 'fonts', 'scoreboard.ttf'))
+font = ImageFont.truetype(font_path, 10)
 
 serial = spi(port=0, device=0, gpio=noop())
-device = max7219(serial, cascaded=4, block_orientation=0)  # may be 90 or -90
+device = max7219(serial, cascaded=4, block_orientation=-90)  # may be 90 or -90
 
 
 timer = 0.0
@@ -26,68 +29,84 @@ set_timer_mode = False
 set_timer_capture = ""
 
 
-enlarger = Enlarger(pin=1)
+enlarger = Enlarger(pin=18)
 
 
-def display(text, font=proportional(LCD_FONT)):
+def display(text):
     with canvas(device) as draw:
-        draw.text((0, 0), text, font=font, fill="white")
+        draw.text((0, -1), text, font=font, fill="white")
+
+
+def display_time(number):
+    display("{:.1f}".format(number).zfill(4))
 
 
 def print_light():
-    enlarger.execute(timer)
+    enlarger.execute(timer, draw=display_time)
 
 
-def add(amount=1):
+def add(amount=.1):
     global timer
     timer += amount
     if timer >= 100:
         timer = 99.9
-    display("{:.1f}".format(timer).zfill(4))
+    display_time(timer)
 
 
-def rem(amount=1):
+def rem(amount=.1):
     global timer
     timer -= amount
     if timer < 0.0:
         timer = 0.0
-    display("{:.1f}".format(timer).zfill(4))
-
-
-def set_timer(length):
-    global timer
-    if 0 >= length >= 100:
-        print('Bad Length')
-        return
-    timer = length
-    display("{:.1f}".format(timer).zfill(4))
+    display_time(timer)
 
 
 def set_timer_mode_toggle():
-    global set_timer_mode, timer
+    global set_timer_mode, timer, set_timer_capture
     if set_timer_mode:
         try:
             new_timer = float(set_timer_capture)
-        except ValueError:
-            print("Bad timer value")
-            # blink or something
+        except ValueError as err:
+            print("Bad timer value {}".format(err))
+            set_timer_capture = ''
+            display("error")
+            time.sleep(1)
+            display_time(timer)
             return
         else:
-            if 0 >= new_timer > 100:
+            set_timer_capture = ''
+            if 100 > new_timer >= 0:
                 timer = new_timer
+                display_time(timer)
             else:
-                print("Bad timer value")
+                display("error")
+                time.sleep(1)
+                display_time(timer)
+                print("Bad timer value: {}".format(new_timer))
     else:
-        pass
-        # start blinking
+        display("Enter*")
     set_timer_mode = not set_timer_mode
 
 
-def audio(file):
-    wave_obj = sa.WaveObject.from_wave_file(file)
-    audio_thread = Thread(target=wave_obj.play)
-    audio_thread.setDaemon(True)
-    audio_thread.start()
+def cancel():
+    global set_timer_mode, set_timer_capture
+    enlarger.cancel()
+    set_timer_mode = False
+    display_time(timer)
+    set_timer_capture = ''
+
+
+def on_press(key):
+    if enlarger.printing:
+        return
+    actions = {
+        '+': add,
+        '-': rem
+    }
+    stringed = str(key).strip("'")
+
+    if stringed in actions:
+        return actions[stringed]()
 
 
 def on_release(key):
@@ -95,40 +114,51 @@ def on_release(key):
     actions = {
         'Key.enter': print_light,
         '/': enlarger.toggle,
-        '+': add,
-        '-': rem,
-        'Key.backspace': enlarger.cancel,
+        'Key.backspace': cancel,
         '*': set_timer_mode_toggle
     }
     stringed = str(key).strip("'")
 
-    if stringed in actions:
-        return actions[stringed]()
+    if stringed == 'Key.backspace':
+        cancel()
+        return
+
+    if enlarger.printing:
+        return
 
     if set_timer_mode:
-        converts = {
-            'Key.page_up': '9',
-            'Key.up': '8',
-            'Key.home': '7',
-            'Key.right': '6',
-            '<12>': '5',
-            'Key.left': '4',
-            'Key.page_down': '3',
-            'Key.down': '2',
-            'Key.end': '1',
-            'Key.insert': '0',
-            'Key.delete': '.',
-        }
-        if stringed in converts:
-            set_timer_capture += converts[stringed]
-            return
         if stringed in '.0123456789':
             set_timer_capture += stringed
+            display(set_timer_capture + "*")
             return
-
-    print('Unknown key {}'.format(key))
+        elif stringed in '.,':
+            set_timer_capture += "."
+            display(set_timer_capture + "*")
+            return
+        elif stringed == 'Key.enter' or stringed == '*':
+            set_timer_mode_toggle()
+            return
+        else:
+            try:
+                key.char
+            except AttributeError:
+                pass
+            else:
+                if str(key.char).startswith('5'):
+                    set_timer_capture += '5'
+                    return
+    elif stringed in actions:
+        return actions[stringed]()
 
 
 if __name__ == '__main__':
-    with keyboard.Listener(on_release=on_release) as listener:
-        listener.join()
+    print("Starting at ")
+    display("LOVE U")
+    time.sleep(4)
+    display_time(timer)
+    try:
+        with keyboard.Listener(on_press=on_press,
+                               on_release=on_release) as listener:
+            listener.join()
+    finally:
+        display("------")
