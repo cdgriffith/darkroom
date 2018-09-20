@@ -58,8 +58,8 @@ class Enlarger(OutputDevice):
         self.draw(initial)
 
     def _print_off(self):
-        end_time = time.time() + self.length
         self.on()
+        end_time = time.time() + self.length
         while self.length > 0:
             if not self.printing:
                 return
