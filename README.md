@@ -21,3 +21,8 @@ Install everything, then some more stuff, and then the rest.
 ENTER  "Print" - Enlarger on, timer countdown, auto enlarger off   
 ```
 
+## Licnese
+
+This is MIT Licensed, view the LICENSE file for details.
+
+This is using the Free for personal use Scoreboard font available at https://www.ffonts.net/Score-Board.font
