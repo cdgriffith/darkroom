@@ -2,3 +2,4 @@ pynput
 luma.led_matrix
 gpiozero
 simpleaudio
+pillow
