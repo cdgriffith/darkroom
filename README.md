@@ -13,9 +13,12 @@ Please use the [guide from CodeCalamity](https://codecalamity.com/build-your-own
 
 In short:
 
-* Setup hardware as described
+* [Enable SPI](https://luma-led-matrix.readthedocs.io/en/latest/install.html#max7219-devices)
+* Add user to proper groups `sudo usermod -a -G spi,gpio pi`
+* Install pre-reqs `sudo apt install -y build-essential python3-dev libfreetype6-dev libjpeg-dev libopenjp2-7 libtiff5`
 * Create a virtual env `python3 -m venv`
 * Activate env `source venv/bin/activate`
+* Update pip `python -m pip install --upgrade --ignore-installed pip setuptools`
 * Install requirements `pip install -r requirements`
 * Run the program `python -m darkroom`
 

@@ -29,7 +29,7 @@ enlarger = Enlarger(pin=18)
 
 def display(text):
     with canvas(device) as draw:
-        draw.text((0, -1), text, font=font, fill="white")
+        draw.text((0, 0), text, font=font, fill="white")
 
 
 def display_time(number):
