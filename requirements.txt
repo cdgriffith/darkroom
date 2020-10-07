@@ -1,5 +1,5 @@
-pynput
-luma.led_matrix
 gpiozero
-simpleaudio
+luma.led_matrix
 pillow
+pynput
+simpleaudio
