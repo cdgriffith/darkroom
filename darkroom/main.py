@@ -11,31 +11,35 @@ from pynput import keyboard
 
 from darkroom.enlarger import Enlarger
 
-font_path = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "fonts", "scoreboard.ttf")
-)
+X_OFFSET = int(os.getenv('X_OFFSET', 0))
+Y_OFFSET = int(os.getenv('Y_OFFSET', -2))
+BLOCK_DIR = int(os.getenv('BLOCK_DIR', -90))
+ENLARGER_PIN = int(os.getenv('ENLARGER_PIN', 18))
+STARTUP_MESSAGE = os.getenv('STARTUP_MESSAGE', 'LOVE U')
+FONT_FILE = os.getenv('FONT_FILE', os.path.join(os.path.dirname(__file__), "fonts", "scoreboard.ttf"))
+
+font_path = os.path.abspath(FONT_FILE)
+
 font = ImageFont.truetype(font_path, 10)
 
 serial = spi(port=0, device=0, gpio=noop())
-device = max7219(serial, cascaded=4, block_orientation=-90)
+device = max7219(serial, cascaded=4, block_orientation=BLOCK_DIR)
 
 timer = 0.0
 set_timer_mode = False
 set_timer_capture = ""
 
 
-enlarger = Enlarger(pin=18)
+enlarger = Enlarger(pin=ENLARGER_PIN)
 
 
 def display(text):
     with canvas(device) as draw:
-        draw.text((0, 0), text, font=font, fill="white")
+        draw.text((X_OFFSET, Y_OFFSET), text, font=font, fill="white")
 
 
 def display_time(number):
-    display(
-        "{:.1f}".format(number).zfill(4),
-    )
+    display("{:.1f}".format(number).zfill(4))
 
 
 def print_light():
@@ -147,7 +151,7 @@ def on_release(key):
 
 
 def main():
-    display("LOVE U")
+    display(STARTUP_MESSAGE)
     time.sleep(4)
     display_time(timer)
     try:

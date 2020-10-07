@@ -33,6 +33,18 @@ In short:
 ENTER  "Print" - Enlarger on, timer countdown, auto enlarger off
 ```
 
+## Configuration
+
+It is possible to customize a few things with environment variables
+
+* X_OFFSET (default 0) 
+* Y_OFFSET (default -2)
+* BLOCK_DIR (default -90)
+* ENLARGER_PIN = (default 18)
+* STARTUP_MESSAGE = (default 'LOVE U')
+* FONT_FILE = (default "darkroom/fonts/scoreboard.ttf")
+
+
 ## License
 
 This is MIT Licensed, view the LICENSE file for details.
