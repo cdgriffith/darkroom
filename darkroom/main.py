@@ -13,7 +13,6 @@ from PIL import ImageFont
 
 from darkroom.enlarger import Enlarger
 
-
 X_OFFSET = int(os.getenv('X_OFFSET', 0))
 Y_OFFSET = int(os.getenv('Y_OFFSET', -2))
 BLOCK_DIR = int(os.getenv('BLOCK_DIR', -90))
@@ -127,6 +126,8 @@ def on_release(key):
         return
 
     if enlarger.printing:
+        if key == "enter":
+            cancel()
         return
 
     if key in actions:
@@ -167,14 +168,19 @@ def main():
             char = get_char()
             ascii_char = ord(char)
 
-            if ascii_char == 3 or char.lower() == "e":  # CTRL-C / exit
+            if ascii_char == 3 or char.lower() == "e":  # CTRL-C, "exit"
                 break
+
             elif ascii_char == 27:
                 display("NUMLK")
+                [get_char() for _ in range(2)]
                 continue
+            elif ascii_char == 126:  # Not pressing numlock, maybe key
+                continue
+
             elif ascii_char == 13:
                 char = "enter"
-            elif ascii_char == 10:
+            elif ascii_char == 127:
                 char = "backspace"
             elif char not in "0123456789.*/-+":
                 continue
