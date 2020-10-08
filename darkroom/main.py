@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import os
+import termios
+import sys
+import tty
 import time
 
 from luma.core.interface.serial import noop, spi
 from luma.core.render import canvas
 from luma.led_matrix.device import max7219
 from PIL import ImageFont
-from pynput import keyboard
 
 from darkroom.enlarger import Enlarger
+
 
 X_OFFSET = int(os.getenv('X_OFFSET', 0))
 Y_OFFSET = int(os.getenv('Y_OFFSET', -2))
@@ -97,43 +100,48 @@ def cancel():
     set_timer_capture = ""
 
 
-def on_press(key):
-    if enlarger.printing:
-        return
-    actions = {"+": add, "-": rem}
-    stringed = str(key).strip("'")
-
-    if stringed in actions:
-        return actions[stringed]()
+def get_char():
+    stdin_file_descriptor = sys.stdin.fileno()
+    old_settings = termios.tcgetattr(stdin_file_descriptor)
+    try:
+        tty.setraw(stdin_file_descriptor)
+        character = sys.stdin.read(1)
+    finally:
+        termios.tcsetattr(stdin_file_descriptor, termios.TCSADRAIN, old_settings)
+    return character
 
 
 def on_release(key):
     global set_timer_capture
     actions = {
-        "Key.enter": print_light,
+        "enter": print_light,
         "/": enlarger.toggle,
-        "Key.backspace": cancel,
+        "backspace": cancel,
         "*": set_timer_mode_toggle,
+        "+": add,
+        "-": rem
     }
-    stringed = str(key).strip("'")
 
-    if stringed == "Key.backspace":
+    if key == "backspace":
         cancel()
         return
 
     if enlarger.printing:
         return
 
+    if key in actions:
+        return actions[key]()
+
     if set_timer_mode:
-        if stringed in ".0123456789":
-            set_timer_capture += stringed
+        if key in ".0123456789":
+            set_timer_capture += key
             display(set_timer_capture + "*")
             return
-        elif stringed in ".,":
+        elif key in ".,":
             set_timer_capture += "."
             display(set_timer_capture + "*")
             return
-        elif stringed == "Key.enter" or stringed == "*":
+        elif key == "enter" or key == "*":
             set_timer_mode_toggle()
             return
         else:
@@ -146,8 +154,8 @@ def on_release(key):
                     set_timer_capture += "5"
                     display(set_timer_capture + "*")
                     return
-    elif stringed in actions:
-        return actions[stringed]()
+    elif key in actions:
+        return actions[key]()
 
 
 def main():
@@ -155,8 +163,23 @@ def main():
     time.sleep(4)
     display_time(timer)
     try:
-        with keyboard.Listener(on_press=on_press, on_release=on_release) as listener:
-            listener.join()
+        while True:
+            char = get_char()
+            ascii_char = ord(char)
+
+            if ascii_char == 3 or char.lower() == "e":  # CTRL-C / exit
+                break
+            elif ascii_char == 27:
+                display("NUMLK")
+                continue
+            elif ascii_char == 13:
+                char = "enter"
+            elif ascii_char == 10:
+                char = "backspace"
+            elif char not in "0123456789.*/-+":
+                continue
+
+            on_release(char)
     finally:
         display("------")
 

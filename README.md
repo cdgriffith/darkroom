@@ -9,13 +9,11 @@ This is my code for a darkroom timer using:
 
 ## Installing
 
-Please use the [guide from CodeCalamity](https://codecalamity.com/build-your-own-pi-powered-enlarger-timer/).
-
-In short:
-
 * [Enable SPI](https://luma-led-matrix.readthedocs.io/en/latest/install.html#max7219-devices)
+* Go into `sudo raspi-config` and set `3 Boot Options` for `B1 Desktop / CLI` to `B2 Console Autologin`
 * Add user to proper groups `sudo usermod -a -G spi,gpio pi`
-* Install pre-reqs `sudo apt install -y build-essential python3-dev libfreetype6-dev libjpeg-dev libopenjp2-7 libtiff5`
+* Install luma pre-reqs `sudo apt update && sudo apt install -y build-essential python3-dev python3-pip libfreetype6-dev libjpeg-dev libopenjp2-7 libtiff5`
+* Checkout darkroom `cd ~ && git checkout https://github.com/cdgriffith/darkroom.git && cd darkroom`    
 * Create a virtual env `python3 -m venv`
 * Activate env `source venv/bin/activate`
 * Update pip `python -m pip install --upgrade --ignore-installed pip setuptools`
