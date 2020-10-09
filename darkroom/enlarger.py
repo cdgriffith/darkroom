@@ -1,5 +1,5 @@
-#!/usr/bin/env python
-# -*- coding: UTF-8 -*-
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 import time
 from threading import Thread
 
@@ -7,7 +7,6 @@ from gpiozero import OutputDevice
 
 
 class Enlarger(OutputDevice):
-
     def __init__(self, pin):
         super(Enlarger, self).__init__(pin, initial_value=True)
         self.printing = False
@@ -54,7 +53,7 @@ class Enlarger(OutputDevice):
             if not self.printing:
                 self.draw(initial)
                 return
-            time.sleep(.2)
+            time.sleep(0.2)
         self.draw(initial)
 
     def _print_off(self):
@@ -63,8 +62,8 @@ class Enlarger(OutputDevice):
         while self.length > 0:
             if not self.printing:
                 return
-            time.sleep(.05)
-            self.length -= .05
+            time.sleep(0.05)
+            self.length -= 0.05
             if time.time() >= end_time:
                 break
         self.printing = False

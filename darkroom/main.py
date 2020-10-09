@@ -1,48 +1,54 @@
-#!/usr/bin/env python
-# -*- coding: UTF-8 -*-
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 import os
+import termios
+import sys
+import tty
 import time
 
-from pynput import keyboard
-from luma.core.interface.serial import spi, noop
+from luma.core.interface.serial import noop, spi
 from luma.core.render import canvas
 from luma.led_matrix.device import max7219
+from PIL import ImageFont
 
 from darkroom.enlarger import Enlarger
 
-from PIL import ImageFont
+X_OFFSET = int(os.getenv('X_OFFSET', 0))
+Y_OFFSET = int(os.getenv('Y_OFFSET', -2))
+BLOCK_DIR = int(os.getenv('BLOCK_DIR', -90))
+ENLARGER_PIN = int(os.getenv('ENLARGER_PIN', 18))
+STARTUP_MESSAGE = os.getenv('STARTUP_MESSAGE', 'LOVE U')
+FONT_FILE = os.getenv('FONT_FILE', os.path.join(os.path.dirname(__file__), "fonts", "scoreboard.ttf"))
 
-font_path = os.path.abspath(
-    os.path.join(os.path.dirname(__file__),
-                 'fonts',
-                 'scoreboard.ttf'))
+font_path = os.path.abspath(FONT_FILE)
+
 font = ImageFont.truetype(font_path, 10)
 
 serial = spi(port=0, device=0, gpio=noop())
-device = max7219(serial, cascaded=4, block_orientation=-90)
+device = max7219(serial, cascaded=4, block_orientation=BLOCK_DIR)
 
 timer = 0.0
 set_timer_mode = False
 set_timer_capture = ""
 
 
-enlarger = Enlarger(pin=18)
+enlarger = Enlarger(pin=ENLARGER_PIN)
 
 
 def display(text):
     with canvas(device) as draw:
-        draw.text((0, -1), text, font=font, fill="white")
+        draw.text((X_OFFSET, Y_OFFSET), text, font=font, fill="white")
 
 
 def display_time(number):
-    display("{:.1f}".format(number).zfill(4),)
+    display("{:.1f}".format(number).zfill(4))
 
 
 def print_light():
     enlarger.execute(timer, draw=display_time)
 
 
-def add(amount=.1):
+def add(amount=0.1):
     global timer
     timer += amount
     if timer >= 100:
@@ -50,7 +56,7 @@ def add(amount=.1):
     display_time(timer)
 
 
-def rem(amount=.1):
+def rem(amount=0.1):
     global timer
     timer -= amount
     if timer < 0.0:
@@ -65,13 +71,13 @@ def set_timer_mode_toggle():
             new_timer = float(set_timer_capture)
         except ValueError as err:
             print("Bad timer value {}".format(err))
-            set_timer_capture = ''
+            set_timer_capture = ""
             display("error")
             time.sleep(1)
             display_time(timer)
             return
         else:
-            set_timer_capture = ''
+            set_timer_capture = ""
             if 100 > new_timer >= 0:
                 timer = new_timer
                 display_time(timer)
@@ -90,49 +96,53 @@ def cancel():
     enlarger.cancel()
     set_timer_mode = False
     display_time(timer)
-    set_timer_capture = ''
+    set_timer_capture = ""
 
 
-def on_press(key):
-    if enlarger.printing:
-        return
-    actions = {
-        '+': add,
-        '-': rem
-    }
-    stringed = str(key).strip("'")
-
-    if stringed in actions:
-        return actions[stringed]()
+def get_char():
+    stdin_file_descriptor = sys.stdin.fileno()
+    old_settings = termios.tcgetattr(stdin_file_descriptor)
+    try:
+        tty.setraw(stdin_file_descriptor)
+        character = sys.stdin.read(1)
+    finally:
+        termios.tcsetattr(stdin_file_descriptor, termios.TCSADRAIN, old_settings)
+    return character
 
 
 def on_release(key):
     global set_timer_capture
     actions = {
-        'Key.enter': print_light,
-        '/': enlarger.toggle,
-        'Key.backspace': cancel,
-        '*': set_timer_mode_toggle
+        "enter": print_light,
+        "/": enlarger.toggle,
+        "backspace": cancel,
+        "*": set_timer_mode_toggle,
+        "+": add,
+        "-": rem
     }
-    stringed = str(key).strip("'")
 
-    if stringed == 'Key.backspace':
+    if key == "backspace":
         cancel()
         return
 
     if enlarger.printing:
+        if key == "enter":
+            cancel()
         return
 
+    if key in actions:
+        return actions[key]()
+
     if set_timer_mode:
-        if stringed in '.0123456789':
-            set_timer_capture += stringed
+        if key in ".0123456789":
+            set_timer_capture += key
             display(set_timer_capture + "*")
             return
-        elif stringed in '.,':
+        elif key in ".,":
             set_timer_capture += "."
             display(set_timer_capture + "*")
             return
-        elif stringed == 'Key.enter' or stringed == '*':
+        elif key == "enter" or key == "*":
             set_timer_mode_toggle()
             return
         else:
@@ -141,22 +151,44 @@ def on_release(key):
             except AttributeError:
                 pass
             else:
-                if str(key.char).startswith('5') or key.char is None:
-                    set_timer_capture += '5'
+                if str(key.char).startswith("5") or key.char is None:
+                    set_timer_capture += "5"
                     display(set_timer_capture + "*")
                     return
-    elif stringed in actions:
-        return actions[stringed]()
+    elif key in actions:
+        return actions[key]()
 
 
-if __name__ == '__main__':
-    print("Starting at ")
-    display("LOVE U")
+def main():
+    display(STARTUP_MESSAGE)
     time.sleep(4)
     display_time(timer)
     try:
-        with keyboard.Listener(on_press=on_press,
-                               on_release=on_release) as listener:
-            listener.join()
+        while True:
+            char = get_char()
+            ascii_char = ord(char)
+
+            if ascii_char == 3 or char.lower() == "e":  # CTRL-C, "exit"
+                break
+
+            elif ascii_char == 27:
+                display("NUMLK")
+                [get_char() for _ in range(2)]
+                continue
+            elif ascii_char == 126:  # Not pressing numlock, maybe key
+                continue
+
+            elif ascii_char == 13:
+                char = "enter"
+            elif ascii_char == 127:
+                char = "backspace"
+            elif char not in "0123456789.*/-+":
+                continue
+
+            on_release(char)
     finally:
         display("------")
+
+
+if __name__ == "__main__":
+    main()
