@@ -34,6 +34,9 @@ The IOT device should be connected to GPIO 18 (aka PI Pin number 12)
 * Test the program `python -m darkroom`
 * Add it to bashrc `echo "PYTHONPATH=/home/pi/darkroom /home/pi/darkroom/venv/bin/python -m darkroom" > ~/.bashrc`
 
+Once added to the bashrc file, it will automatically launch when the user logs in. This will "take over" the console, 
+even on SSH connections, so remember if you need to switch back to console to hit E or Ctrl+C first. 
+
 ## Key controls
 
 ```
@@ -42,6 +45,7 @@ The IOT device should be connected to GPIO 18 (aka PI Pin number 12)
 -      Remove a tenth of a second
 /      "Focus" - Turn the enlarger on
 ENTER  "Print" - Enlarger on, timer counts down to zero then turns the enlarger back off
+e      Pressing E or Ctrl+C Will exit the program 
 ```
 
 ## Configuration
