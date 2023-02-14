@@ -18,7 +18,8 @@ The SPI and IoT device should be connected before the software is installed
 
 ### IoT Relay wiring
 
-The IOT device should be connected to GPIO 18 (aka PI Pin number 12)
+The IOT device should be connected to GPIO 18 (aka PI Pin number 12). Check your
+relay device if uses ACTIVE HIGH mode or not and set ACTIVE_MODE_HIGH correctly.
 
 ## Installing
 
@@ -58,6 +59,7 @@ It is possible to customize a few things with environment variables
 * ENLARGER_PIN = (default 18)
 * STARTUP_MESSAGE = (default 'LOVE U')
 * FONT_FILE = (default "darkroom/fonts/scoreboard.ttf")
+* ACTIVE_MODE_HIGH = (default True)
 
 
 ## License

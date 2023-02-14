@@ -7,14 +7,15 @@ from gpiozero import OutputDevice
 
 
 class Enlarger(OutputDevice):
-    def __init__(self, pin):
-        super(Enlarger, self).__init__(pin, initial_value=True)
+    def __init__(self, pin, active_high=True):
+        super(Enlarger, self).__init__(pin, active_high=active_high, initial_value=True)
         self.printing = False
         self.print_thread = None
         self.timer_thread = None
         self.draw = None
         self.state = False
         self.length = 0
+        self.active_high = active_high
         self.off()
 
     def toggle(self):
@@ -27,11 +28,11 @@ class Enlarger(OutputDevice):
 
     def on(self):
         self.state = True
-        self._write(False)
+        super().on()
 
     def off(self):
         self.state = False
-        self._write(True)
+        super().off()
 
     def execute(self, length, draw):
         if self.printing:
