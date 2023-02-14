@@ -19,6 +19,7 @@ BLOCK_DIR = int(os.getenv('BLOCK_DIR', -90))
 ENLARGER_PIN = int(os.getenv('ENLARGER_PIN', 18))
 STARTUP_MESSAGE = os.getenv('STARTUP_MESSAGE', 'LOVE U')
 FONT_FILE = os.getenv('FONT_FILE', os.path.join(os.path.dirname(__file__), "fonts", "scoreboard.ttf"))
+ACTIVE_MODE_HIGH = os.getenv('ACTIVE_MODE_HIGH', True)
 
 font_path = os.path.abspath(FONT_FILE)
 
@@ -32,7 +33,7 @@ set_timer_mode = False
 set_timer_capture = ""
 
 
-enlarger = Enlarger(pin=ENLARGER_PIN)
+enlarger = Enlarger(pin=ENLARGER_PIN, active_high=ACTIVE_MODE_HIGH)
 
 
 def display(text):

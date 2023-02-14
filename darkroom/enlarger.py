@@ -7,8 +7,8 @@ from gpiozero import OutputDevice
 
 
 class Enlarger(OutputDevice):
-    def __init__(self, pin):
-        super(Enlarger, self).__init__(pin, initial_value=True)
+    def __init__(self, pin, active_high=True):
+        super(Enlarger, self).__init__(pin, initial_value=True, active_high=active_high)
         self.printing = False
         self.print_thread = None
         self.timer_thread = None
